@@ -1,0 +1,144 @@
+%CMPEN 454 Project 2
+
+%Load the necessary data files
+load('vue2CalibInfo.mat')
+load('vue4CalibInfo.mat')
+%Initialization for Vue2
+filenamevue2mp4 = 'Subject4-Session3-24form-Full-Take4-Vue2.mp4';
+vue2video = VideoReader(filenamevue2mp4);
+%Initialization for Vue4
+filenamevue4mp4 = 'Subject4-Session3-24form-Full-Take4-Vue4.mp4';
+vue4video = VideoReader(filenamevue2mp4);
+%%%THIS IS USED TO GET THE FRAME AS AN IMAGE
+%VUE 2
+%mocapFnum = frame; %mocap frame number
+%vue2video.CurrentTime = (mocapFnum-1)*(50/100)/vue2video.FrameRate;
+%vid2Frame = readFrame(vue2video);
+%VUE 4
+%mocapFnum = frame; %mocap frame number
+%vue4video.CurrentTime = (mocapFnum-1)*(50/100)/vue4video.FrameRate;
+%vid4Frame = readFrame(vue4video);
+
+%1. Input and parsing of mocap dataset. Read in and properly interpret the 3D joint data.
+
+%Get the world coordinates(x,y,z) and confidence values for each joint in
+%every frame
+frame = 1:1:26214;
+
+right_shoulder_world = get_joint_world_coords(frame,1);
+right_elbow_world = get_joint_world_coords(frame,2);
+right_wrist_world = get_joint_world_coords(frame,3);
+left_shoulder_world = get_joint_world_coords(frame,4);
+left_elbow_world = get_joint_world_coords(frame,5);
+left_wrist_world = get_joint_world_coords(frame,6);
+right_hip_world = get_joint_world_coords(frame,7);
+right_knee_world = get_joint_world_coords(frame,8);
+right_ankle_world = get_joint_world_coords(frame,9);
+left_hip_world = get_joint_world_coords(frame,10);
+left_knee_world = get_joint_world_coords(frame,11);
+left_ankle_world = get_joint_world_coords(frame,12);
+
+%2. Input and parsing of camera parameters. Read in each set of camera parameters and
+%interpret with respect to our mathematical camera projection model.
+
+%vue2 camera parameters
+%vue2_Rmat = [-0.759251863679378,-0.649110013194741,0.0468273239649182,0;-0.138093351133920,0.0903736400713044,-0.986287398050318,0;0.635977070240741,-0.755307087184137,-0.158254131628272,0; 0,0,0,1];
+
+%vue4 camera parameters
+%vue4_Rmat = [-0.816427158217721,0.576669940506233,0.0299745732425930,0;0.103963925393142,0.197851965453977,-0.974703084012177,0;-0.568012497698235,-0.792657794689825,-0.221484588574639,0; 0,0,0,1];
+
+
+%3. Use the camera parameters to project 3D joints into pixel locations in each of the two
+%image coordinate systems.
+
+%Get the pixel values for Vue2
+right_shoulder_pixel_vue2 = get_vue2_joint_pixel_coords(frame,right_shoulder_world);
+right_elbow_pixel_vue2 = get_vue2_joint_pixel_coords(frame,right_elbow_world);
+right_wrist_pixel_vue2 = get_vue2_joint_pixel_coords(frame,right_wrist_world);
+left_shoulder_pixel_vue2 = get_vue2_joint_pixel_coords(frame,left_shoulder_world);
+left_elbow_pixel_vue2 = get_vue2_joint_pixel_coords(frame,left_elbow_world);
+left_wrist_pixel_vue2 = get_vue2_joint_pixel_coords(frame,left_wrist_world);
+right_hip_pixel_vue2 = get_vue2_joint_pixel_coords(frame,right_hip_world);
+right_knee_pixel_vue2 = get_vue2_joint_pixel_coords(frame,right_knee_world);
+right_ankle_pixel_vue2 = get_vue2_joint_pixel_coords(frame,right_ankle_world);
+left_hip_pixel_vue2 = get_vue2_joint_pixel_coords(frame,left_hip_world);
+left_knee_pixel_vue2 = get_vue2_joint_pixel_coords(frame,left_knee_world);
+left_ankle_pixel_vue2 = get_vue2_joint_pixel_coords(frame,left_ankle_world);
+%Get the pixel values for Vue4
+right_shoulder_pixel_vue4 = get_vue4_joint_pixel_coords(frame,right_shoulder_world);
+right_elbow_pixel_vue4 = get_vue4_joint_pixel_coords(frame,right_elbow_world);
+right_wrist_pixel_vue4 = get_vue4_joint_pixel_coords(frame,right_wrist_world);
+left_shoulder_pixel_vue4 = get_vue4_joint_pixel_coords(frame,left_shoulder_world);
+left_elbow_pixel_vue4 = get_vue4_joint_pixel_coords(frame,left_elbow_world);
+left_wrist_pixel_vue4 = get_vue4_joint_pixel_coords(frame,left_wrist_world);
+right_hip_pixel_vue4 = get_vue4_joint_pixel_coords(frame,right_hip_world);
+right_knee_pixel_vue4 = get_vue4_joint_pixel_coords(frame,right_knee_world);
+right_ankle_pixel_vue4 = get_vue4_joint_pixel_coords(frame,right_ankle_world);
+left_hip_pixel_vue4 = get_vue4_joint_pixel_coords(frame,left_hip_world);
+left_knee_pixel_vue4 = get_vue4_joint_pixel_coords(frame,left_knee_world);
+left_ankle_pixel_vue4 = get_vue4_joint_pixel_coords(frame,left_ankle_world);
+%Want to do forward projection of all world points into pixel points
+
+%4. Reconstruct the 3D location of each joint in the world coordinate system from the
+%projected 2D joints you produced in Step3, using two-camera triangulation.
+
+%5. Compute Euclidean (L²) distance between all joint pairs. This is a per joint, per frame L²
+%distance between the original 3D joints and the reconstructed 3D joints providing a
+%quantitative analysis of the distance between the joint pairs.
+
+
+%Functions
+
+%function called to get the world coordinates of a specific joint in a
+%specific frame
+%This is used for Step 1
+function joint_world_coords = get_joint_world_coords(frame, joint)
+load('Subject4-Session3-Take4_mocapJoints.mat');
+x = mocapJoints(frame,joint,1); %array of 12 X coordinates
+y = mocapJoints(frame,joint,2); % Y coordinates
+z = mocapJoints(frame,joint,3); % Z coordinates
+conf = mocapJoints(frame,joint,4); %confidence values
+joint_world_coords = [x,y,z,conf];
+end
+
+function vue2_joint_pixel_coords = get_vue2_joint_pixel_coords(frame, joint)
+vue2_pmat = [-0.759251863679378,-0.649110013194741,0.0468273239649182,137.715365606944;-0.138093351133920,0.0903736400713044,-0.986287398050318,805.522696238255;0.635977070240741,-0.755307087184137,-0.158254131628272,7336.52052400539;0,0,0,1];
+vue2_joint_pixel_coords = zeros(length(frame),2);
+
+for i = 1:length(frame)
+    %Get the world coordinates of joint in the frame.
+    joint_world_coords = [joint(i,1); joint(i,2); joint(i,3); joint(i,4)];
+    %Convert world coords to camera coords:
+    joint_cam_coords = vue2_pmat * joint_world_coords;
+    %Convert camera coords to film coords
+    joint_film_coords = [1557.8 0 0 0; 0 1557.8 0 0; 0 0 1 0] * joint_cam_coords;
+    joint_film_x = joint_film_coords(1) / joint_film_coords(3);
+    joint_film_y = joint_film_coords(2) / joint_film_coords(3);
+    %Convert film coords to pixel coords
+    joint_pixel_x = joint_film_x + 976.0397;
+    joint_pixel_y = joint_film_y + 562.8225;
+    
+    vue2_joint_pixel_coords(i,:) = [joint_pixel_x, joint_pixel_y];
+end
+end
+
+function vue4_joint_pixel_coords = get_vue4_joint_pixel_coords(frame,joint)
+vue4_pmat = [-0.816427158217721,0.576669940506233,0.0299745732425930,388.768652422159;0.103963925393142,0.197851965453977,-0.974703084012177,295.060869156745;-0.568012497698235,-0.792657794689825,-0.221484588574639,7283.00415138530; 0,0,0,1];
+vue4_joint_pixel_coords = zeros(length(frame),2);
+
+for i = 1:length(frame)
+    %Get the world coordinates of joint in the frame.
+    joint_world_coords = [joint(i,1); joint(i,2); joint(i,3); joint(i,4)];
+    %Convert world coords to camera coords:
+    joint_cam_coords = vue4_pmat * joint_world_coords;
+    %Convert camera coords to film coords
+    joint_film_coords = [1518.5 0 0 0; 0 1518.5 0 0; 0 0 1 0] * joint_cam_coords;
+    joint_film_x = joint_film_coords(1) / joint_film_coords(3);
+    joint_film_y = joint_film_coords(2) / joint_film_coords(3);
+    %Convert film coords to pixel coords
+    joint_pixel_x = joint_film_x + 975.0173;
+    joint_pixel_y = joint_film_y + 554.8964;
+    
+    vue4_joint_pixel_coords(i,:) = [joint_pixel_x, joint_pixel_y];
+end
+end
